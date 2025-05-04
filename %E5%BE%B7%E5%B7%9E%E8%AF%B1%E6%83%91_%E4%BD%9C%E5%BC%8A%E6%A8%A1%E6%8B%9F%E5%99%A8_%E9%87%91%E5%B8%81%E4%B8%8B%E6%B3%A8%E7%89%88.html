@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>德州诱惑：作弊模拟器（金币下注版）</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #1e272e; color: #f5f6fa; }
+        .container { max-width: 600px; margin: auto; padding: 20px; }
+        .hand, .community, .control-panel { margin-top: 20px; }
+        .card { display: inline-block; margin: 5px; padding: 10px 15px; background: #485460; border-radius: 6px; font-size: 18px; }
+        button { padding: 10px 15px; margin: 5px; font-size: 16px; }
+        .hidden { display: none; }
+        .result { font-size: 20px; margin-top: 20px; color: #fbc531; }
+        input[type=number] { width: 60px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>德州诱惑：作弊模拟器（金币下注版）</h1>
+        <div>
+            <label>选择你的身份：</label>
+            <select id="playerSelect" onchange="startGame()">
+                <option value="none">-- 请选择 --</option>
+                <option value="P1">玩家 1</option>
+                <option value="P2">玩家 2</option>
+                <option value="P3">玩家 3</option>
+                <option value="P4">玩家 4</option>
+                <option value="P5">玩家 5</option>
+                <option value="dealer">庄家（主持人）</option>
+            </select>
+        </div>
+
+        <div id="playerView" class="hidden">
+            <div class="hand">
+                <h2>你的手牌</h2>
+                <div id="playerHand"></div>
+            </div>
+            <div class="community">
+                <h2>公共牌</h2>
+                <div id="communityCards"></div>
+            </div>
+            <div class="betting">
+                <h3>当前金币：<span id="coinDisplay">100</span></h3>
+                <label>下注金额：</label>
+                <input type="number" id="betAmount" min="10" step="10" value="10">
+                <button onclick="placeBet()">下注</button>
+            </div>
+            <div id="result" class="result"></div>
+        </div>
+
+        <div id="dealerView" class="hidden">
+            <div class="control-panel">
+                <h2>庄家控制面板</h2>
+                <label>设置胜者：</label>
+                <select id="winnerSelect">
+                    <option value="P1">玩家 1</option>
+                    <option value="P2">玩家 2</option>
+                    <option value="P3">玩家 3</option>
+                    <option value="P4">玩家 4</option>
+                    <option value="P5">玩家 5</option>
+                </select>
+                <br/><br/>
+                <button onclick="dealCards()">发牌并开奖</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const allHands = {
+        P1: ["♠A", "♠K"],
+        P2: ["♥Q", "♥J"],
+        P3: ["♣10", "♣9"],
+        P4: ["♦8", "♦7"],
+        P5: ["♠2", "♠3"]
+    };
+
+    const community = ["♠J", "♦Q", "♣K", "♠10", "♦9"];
+
+    let selectedPlayer = "none";
+    let winner = "P1";
+    let coins = parseInt(localStorage.getItem("coins")) || 100;
+    let currentBet = 0;
+
+    function startGame() {
+        selectedPlayer = document.getElementById("playerSelect").value;
+        if (selectedPlayer === "none") return;
+
+        document.getElementById("playerView").classList.add("hidden");
+        document.getElementById("dealerView").classList.add("hidden");
+
+        if (selectedPlayer === "dealer") {
+            document.getElementById("dealerView").classList.remove("hidden");
+        } else {
+            document.getElementById("playerView").classList.remove("hidden");
+            renderPlayerView();
+        }
+    }
+
+    function placeBet() {
+        let bet = parseInt(document.getElementById("betAmount").value);
+        if (bet > coins) {
+            alert("金币不足！");
+            return;
+        }
+        currentBet = bet;
+        coins -= bet;
+        localStorage.setItem("coins", coins);
+        document.getElementById("coinDisplay").innerText = coins;
+        alert("下注成功，等待庄家开奖！");
+    }
+
+    function renderPlayerView() {
+        const hand = allHands[selectedPlayer];
+        document.getElementById("playerHand").innerHTML = hand.map(c => `<div class="card">${c}</div>`).join("");
+        document.getElementById("communityCards").innerHTML = community.map(c => `<div class="card">${c}</div>`).join("");
+        document.getElementById("coinDisplay").innerText = coins;
+        document.getElementById("result").innerText = "";
+    }
+
+    function dealCards() {
+        winner = document.getElementById("winnerSelect").value;
+        alert("发牌已完成，现在玩家可以查看结果！");
+        localStorage.setItem("winner", winner);
+    }
+
+    window.onload = () => {
+        const savedWinner = localStorage.getItem("winner");
+        if (savedWinner && selectedPlayer !== "none" && selectedPlayer !== "dealer") {
+            winner = savedWinner;
+            if (selectedPlayer === winner) {
+                coins += currentBet * 2;
+                document.getElementById("result").innerText = "你赢了！获得 " + (currentBet * 2) + " 金币";
+            } else {
+                document.getElementById("result").innerText = "你输了！损失 " + currentBet + " 金币";
+            }
+            localStorage.setItem("coins", coins);
+            document.getElementById("coinDisplay").innerText = coins;
+            currentBet = 0;
+        }
+    };
+</script>
+</body>
+</html>
